@@ -1,6 +1,6 @@
 %% GENERATE FDN REVERBERATION FROM TARGET IR
 
-t_IRPath = './MLReverb/IR/';
+t_IRPath = './audio/IR/';
 
 t_IRNames = dir([t_IRPath 'ir_jack.wav']); 
 centerFrequencies = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000]; % Hz
