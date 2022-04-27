@@ -44,7 +44,7 @@ for i= 1:length(t_IRNames)
     t_length_in_sample = length(t_signal_with_direct);
 
     %% Genetic Algorithm
-    population_size = 20;
+    population_size = 1;
 
     boundary_target_t60  = [ones(1,10)*0.01; ones(1,10)*6];
     boundary_input_gain  = [ones(1,16)*-2; ones(1,16)*2];
@@ -61,7 +61,7 @@ for i= 1:length(t_IRNames)
     numberOfVariables = length(ub);
 
     options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
-        'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',3, "PopulationSize",population_size, 'UseParallel', true);
+        'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',1, "PopulationSize",population_size, 'UseParallel', true);
 
 
     FitnessFunction = @(x)reverb_fitness_full_order_16(x, t_irValues, t_spectrum, t_target_t60', ...
@@ -130,7 +130,7 @@ for i= 1:length(t_IRNames)
 
     %%save values 
 
-    save(['./MLReverb/results/' , t_IRNames(i).name, '_parameters.mat'], 'x'); 
+    save(['./results/' , t_IRNames(i).name, '_parameters.mat'], 'x'); 
 
 end
 
