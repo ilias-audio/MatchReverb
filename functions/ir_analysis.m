@@ -7,14 +7,14 @@ function [irValues,irT60,echo_density, signal_with_direct] = ir_analysis(audio_i
 
     %% DO A SET OF MEASURMENTS ON THE IR
     signal_with_direct_padded = zeros(size(audio_in'));
-    signal_with_direct_padded(1, 1:length(signal_with_direct)) = signal_with_direct;
+    signal_with_direct_padded(1, 1:length(clear_signal)) = clear_signal;
     irValues = calc_ir_values(signal_with_direct_padded', size(signal_with_direct_padded,2), Fs);
 
     %% add the RT60 vs frequency
     octFilBank = octaveFilterBank('1 octave',Fs, ...
                                   'FrequencyRange',[18 22000]);
 
-    clear_signal = squeeze(signal_with_direct');                          
+    clear_signal = squeeze(clear_signal');                          
     audio_out = octFilBank(clear_signal);
 
     bands_ir = squeeze(audio_out(:,:,:));
@@ -92,5 +92,5 @@ echo_density = 0;
 %     box on
 %     shg
 
-signal_with_direct = signal_with_direct';
+signal_with_direct = clear_signal;
 end

@@ -1,4 +1,4 @@
-function cost = reverb_fitness_full_order_16(x, t_irValues, t_spectrum, t_irT60, t_echo_density, t_initial_spectrum_values, t_signal_with_direct, t_array_30dB, t_schroder_energy_db, t_upper, t_lower, fs) 
+function cost = reverb_fitness_full_order_16(x, t_irValues, t_irT60, t_echo_density, t_initial_spectrum_values, t_signal_with_direct, t_array_30dB, t_schroder_energy_db, t_upper, t_lower, fs) 
     
     N = 16;
     
