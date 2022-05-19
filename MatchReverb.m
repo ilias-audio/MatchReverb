@@ -5,19 +5,25 @@
 % April 2022; Last revision: May 2022
 
 %------------- BEGIN CODE --------------
-targetIRPath = './audio/IR/';
-targetIRNames = dir([targetIRPath 'ir_pori.wav']);
+
+fprintf(">>>[INFO] Setup Paths...\n");
+targetIRPath = './IR_mono';
+targetIR = dir(fullfile(targetIRPath, '**/*.*'));
+targetIR = targetIR(~[targetIR.isdir]);
 
 OctaveCenterFreqs = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000];
 FDNOrder = 16;
 
-population_size = 25;
-numOfGen = 5;
+population_size = 10;
+numOfGen = 3;
+fprintf(">>>[INFO] %d Impulse responses found...\n", length(targetIR));
+for i= 1:length(targetIR)
 
-for i= 1:length(targetIRNames)
+    clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetIR targetIRPath i
 
-    [t_raw_signal, fs] = audioread([targetIRPath targetIRNames(i).name]);
-
+    fprintf(">>>[INFO] start reading %s...\n", targetIR(i).name);
+    [t_raw_signal, fs] = audioread(fullfile(targetIR(i).folder, targetIR(i).name));
+    
     t_raw_signal = t_raw_signal / max(abs(t_raw_signal));
 
     [t_irValues,t_irT60,t_echo_density, t_signal_with_direct] = ir_analysis(t_raw_signal, fs);
@@ -27,6 +33,7 @@ for i= 1:length(targetIRNames)
     [t_upper, t_lower] = envelope(t_signal_with_direct, round(fs/300), 'peak');
 
     %% RT60
+    fprintf(">>>[INFO] start analysis %s...\n", targetIR(i).name);
     values_time_freq_target = [t_array_30dB',t_w];
 
     rt30 = interp1( values_time_freq_target(:, 2), values_time_freq_target(:, 1), OctaveCenterFreqs');
@@ -35,11 +42,7 @@ for i= 1:length(targetIRNames)
 
     t_initial_spectrum = t_schroder_energy_db(1,:);
 
-    %t_offset = min(min(t_schroder_energy_db)) + 144;
-
     t_initial_spectrum_values = interp1(values_time_freq_target(:, 2) , t_initial_spectrum', OctaveCenterFreqs');
-
-    %t_initial_spectrum_values = t_initial_spectrum_values - max(t_initial_spectrum_values);
 
     t_length_in_sample = length(t_signal_with_direct);
 
@@ -62,17 +65,18 @@ for i= 1:length(targetIRNames)
 
     options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
         'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',numOfGen, ...
-        "PopulationSize",population_size, 'UseParallel', true);
+        "PopulationSize",population_size, 'UseParallel', false);
 
 
     FitnessFunction = @(x)reverb_fitness_full_order_16(x, ...
         t_irValues, t_target_t60', t_echo_density, ...
         t_initial_spectrum_values, t_signal_with_direct, t_array_30dB, ...
         t_schroder_energy_db, t_upper, t_lower, fs);
-
+    fprintf(">>>[INFO] start Genetic Algorithm %s...\n", targetIR(i).name);
     [x,fval] = ga(FitnessFunction,numberOfVariables,[],[],[],[],lb,ub, [], options);
 
     %% Generated IR
+    fprintf(">>>[INFO] start analysis results %s...\n", targetIR(i).name);
     g_target_t60 = t_target_t60; %% 0.01 : 6.0  // 10
     g_target_t60(10) = g_target_t60(10) / 2;
     g_input_gain = x(1:16);  %% -1 : 1    // 16
@@ -95,6 +99,7 @@ for i= 1:length(targetIRNames)
 
 
     %% Figures
+    fprintf(">>>[INFO] start figures results %s...\n", targetIR(i).name);
     figure(1)
     clf
     semilogx(t_w, t_array_30dB'*2, 'DisplayName','target t60')
@@ -124,12 +129,13 @@ for i= 1:length(targetIRNames)
     plot(t_lower,'DisplayName','TarLower')
 
     %% Write audio file
-    g_fileName = ['gen_', targetIRNames(i).name];
-    audiowrite([targetIRPath g_fileName], g_ir_time_domain, fs);
+    fprintf(">>>[INFO] start saving results %s...\n", targetIR(i).name);
+    g_fileName = ['gen_', targetIR(i).name];
+    audiowrite(fullfile(targetIRPath, "../Results/Audio",g_fileName), g_ir_time_domain, fs);
 
     %%save values 
 
-    save(['./results/' , targetIRNames(i).name, '_parameters.mat'], 'x'); 
+    save(['./results/' , targetIR(i).name, '_parameters.mat'], 'x'); 
 
 end
 
