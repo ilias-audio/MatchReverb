@@ -21,11 +21,10 @@ for i= 1:length(targetMeasures)
     fprintf(">>>[INFO] start Measure %d/%d...\n", i , length(targetMeasures));
     fprintf(">>>[INFO] start reading %s...\n", targetMeasures(i).name);
     
-    measuresArray(i,1) = open(fullfile(targetMeasures(i).folder, targetMeasures(i).name));
-    measuresArray(i,2) = targetMeasures(i).name;
+    measuresArray(i) = open(fullfile(targetMeasures(i).folder, targetMeasures(i).name));
     fprintf("\n");
 
-    
+    irTimeDomain = GenerateImpulseResponseFromFeatures(measuresArray.MeasuresStruct, delays, input_gain, output_gain);
 
 
 end

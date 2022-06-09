@@ -8,6 +8,8 @@ function [schroder_energy_db , array_30dB , t_w ]= rt30_from_spectrum(signal, fs
     relative_band_energy = schroder_energy_db - schroder_energy_db(1,:);
 
     max_audible_freq = find(t_w(:,1) >= 18000, 1) - 1;
+
+    schroder_energy_db = schroder_energy_db(:, 1:max_audible_freq);
     
     for n = 1:length(relative_band_energy(1, 1:max_audible_freq))
         x = find(relative_band_energy(:,n) < -30, 1);

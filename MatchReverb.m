@@ -2,50 +2,39 @@
 % Author: Ilias Ibnyahya
 % Queen Mary University of London
 % email: i.ibnyahya@qmul.ac.uk
-% April 2022; Last revision: May 2022
+% April 2022; Last revision: June 2022
 
 %------------- BEGIN CODE --------------
 
+% fprintf(">>>[INFO] Setup Paths...\n");
+% targetIRPath = './IR_mono';
+% targetIR = dir(fullfile(targetIRPath, '**/*.*'));
+% targetIR = targetIR(~[targetIR.isdir]);
+
 fprintf(">>>[INFO] Setup Paths...\n");
-targetIRPath = './IR_mono';
-targetIR = dir(fullfile(targetIRPath, '**/*.*'));
-targetIR = targetIR(~[targetIR.isdir]);
+targetIRPath = './results/target';
+targetMeasures = dir(fullfile(targetIRPath, '**/*measures.mat'));
+targetMeasures = targetMeasures(~[targetMeasures.isdir]);
+
+fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
 
 OctaveCenterFreqs = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000];
 FDNOrder = 16;
 
 population_size = 10;
 numOfGen = 3;
-fprintf(">>>[INFO] %d Impulse responses found...\n", length(targetIR));
-for i= 1:length(targetIR)
 
-    clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetIR targetIRPath i
+for i= 10:length(targetMeasures)
 
-    fprintf(">>>[INFO] start reading %s...\n", targetIR(i).name);
-    [t_raw_signal, fs] = audioread(fullfile(targetIR(i).folder, targetIR(i).name));
+    clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetMeasures targetIRPath i
+
     
-    t_raw_signal = t_raw_signal / max(abs(t_raw_signal));
-
-    [t_irValues,t_irT60,t_echo_density, t_signal_with_direct] = ir_analysis(t_raw_signal, fs);
-
-    [t_schroder_energy_db, t_array_30dB , t_w ]= rt30_from_spectrum(t_signal_with_direct, fs);
-
-    [t_upper, t_lower] = envelope(t_signal_with_direct, round(fs/300), 'peak');
-
-    %% RT60
-    fprintf(">>>[INFO] start analysis %s...\n", targetIR(i).name);
-    values_time_freq_target = [t_array_30dB',t_w];
-
-    rt30 = interp1( values_time_freq_target(:, 2), values_time_freq_target(:, 1), OctaveCenterFreqs');
-
-    t_target_t60 = rt30'*2;
-
-    t_initial_spectrum = t_schroder_energy_db(1,:);
-
-    t_initial_spectrum_values = interp1(values_time_freq_target(:, 2) , t_initial_spectrum', OctaveCenterFreqs');
-
-    t_length_in_sample = length(t_signal_with_direct);
-
+    
+    fprintf(">>>[INFO] start reading Measures %d/%d...\n", i , length(targetMeasures));
+    fprintf(">>>[INFO] start reading %s...\n", targetMeasures(i).name);
+   
+    load(fullfile(targetMeasures(i).folder, targetMeasures(i).name));
+   
     %% Genetic Algorithm
 
 
@@ -57,85 +46,99 @@ for i= 1:length(targetIR)
 
     lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:)];%, boundary_power(1,:)];
     ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:)];%, boundary_power(2,:)];
-    init_t_60 = t_target_t60;
-    initial_vector = RT602slope(init_t_60,fs); 
-    initial_matrix = repmat(initial_vector, 1, population_size);
+    
+%     init_t_60 = t_target_t60;
+%     initial_vector = RT602slope(init_t_60,fs); 
+%     initial_matrix = repmat(initial_vector, 1, population_size);
 
     numberOfVariables = length(ub);
 
     options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
         'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',numOfGen, ...
-        "PopulationSize",population_size, 'UseParallel', false);
+        "PopulationSize",population_size, 'UseParallel', true);
 
 
-    FitnessFunction = @(x)reverb_fitness_full_order_16(x, ...
-        t_irValues, t_target_t60', t_echo_density, ...
-        t_initial_spectrum_values, t_signal_with_direct, t_array_30dB, ...
-        t_schroder_energy_db, t_upper, t_lower, fs);
-    fprintf(">>>[INFO] start Genetic Algorithm %s...\n", targetIR(i).name);
+    FitnessFunction = @(x)reverb_fitness_full_order_16(measures, x);
+
+    fprintf(">>>[INFO] start Genetic Algorithm %s...\n", targetMeasures(i).name);
     [x,fval] = ga(FitnessFunction,numberOfVariables,[],[],[],[],lb,ub, [], options);
-
-    %% Generated IR
-    fprintf(">>>[INFO] start analysis results %s...\n", targetIR(i).name);
-    g_target_t60 = t_target_t60; %% 0.01 : 6.0  // 10
-    g_target_t60(10) = g_target_t60(10) / 2;
-    g_input_gain = x(1:16);  %% -1 : 1    // 16
-    g_output_gain = x(17:32); %% -1 : 1    // 16
-    g_delays = ceil(x(33:48)); %% 50 : 5000      // 16
-    g_feedback_matrix = randomOrthogonal(FDNOrder);
-
-    %g_target_power = x(49:58);  % dB
-    g_target_power = t_initial_spectrum_values;  % dB
-
-    g_ir_time_domain = gen_IR_f(t_length_in_sample, FDNOrder, g_input_gain', g_output_gain, g_feedback_matrix, g_delays, g_target_t60, g_target_power, fs);
-
-    [g_irValues,g_irT60, g_echo_density, g_signal_with_direct]  = ir_analysis(g_ir_time_domain, fs);
-
-    [g_schroder_energy_db, g_array_30dB , g_w ]= rt30_from_spectrum(g_signal_with_direct, fs);
-
-    g_initial_spectrum = g_schroder_energy_db(1,:);
-
-    [g_upper, g_lower] = envelope(g_signal_with_direct, round(fs/300), 'peak');
-
-
-    %% Figures
-    fprintf(">>>[INFO] start figures results %s...\n", targetIR(i).name);
-    figure(1)
-    clf
-    semilogx(t_w, t_array_30dB'*2, 'DisplayName','target t60')
-    hold on
-    semilogx(g_w, g_array_30dB'*2, 'DisplayName','generated t60')
-    semilogx(OctaveCenterFreqs, g_target_t60, 'DisplayName','wanted rt60')
-    legend
-
-
-    figure(2)
-    clf
-    semilogx(t_w, g_initial_spectrum, 'DisplayName','generated power')
-    hold on
-    semilogx(g_w, t_initial_spectrum , 'DisplayName','target power')
-    legend
-
-    figure(3)
-    clf
-    plot(g_upper,'DisplayName','GenUpper')
-    hold on 
-    plot(t_upper,'DisplayName','TarUpper')
     
-    figure(4)
-    clf
-    hold on
-    plot(g_lower,'DisplayName','GenLower')
-    plot(t_lower,'DisplayName','TarLower')
+    fprintf(">>>[INFO] start saving results %s...\n", targetMeasures(i).name);
 
-    %% Write audio file
-    fprintf(">>>[INFO] start saving results %s...\n", targetIR(i).name);
-    g_fileName = ['gen_', targetIR(i).name];
-    audiowrite(fullfile(targetIRPath, "../Results/Audio",g_fileName), g_ir_time_domain, fs);
+    [g_input_gain, g_output_gain, g_delays] = splitXinInParameters(x);
 
-    %%save values 
 
-    save(['./results/' , targetIR(i).name, '_parameters.mat'], 'x'); 
+    g_ir_time_domain = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);
+    
+    measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, ['gen_' targetMeasures(i).name(1:end-13)]);
+
+    save(['./results/generated/' , ['gen_' targetMeasures(i).name(1:end-13)], '_measures.mat'], 'measures'); 
+
+    save(['./results/parameters/' , ['gen_' targetMeasures(i).name(1:end-13)], '_parameters.mat'], 'x');
+
+    g_fileName = ['gen_', targetMeasures(i).name(1:end-13), '.wav'];
+    audiowrite(fullfile(targetIRPath, "../audio",g_fileName), g_ir_time_domain, measures.SAMPLE_RATE);
+
+% 
+%     %% Generated IR
+%     fprintf(">>>[INFO] start analysis results %s...\n", targetMeasures(i).name);
+%     g_target_t60 = t_target_t60; %% 0.01 : 6.0  // 10
+%     g_target_t60(10) = g_target_t60(10) / 2;
+%     g_input_gain = x(1:16);  %% -1 : 1    // 16
+%     g_output_gain = x(17:32); %% -1 : 1    // 16
+%     g_delays = ceil(x(33:48)); %% 50 : 5000      // 16
+%     g_feedback_matrix = randomOrthogonal(FDNOrder);
+% 
+%     %g_target_power = x(49:58);  % dB
+%     g_target_power = t_initial_spectrum_values;  % dB
+% 
+%     g_ir_time_domain = gen_IR_f(t_length_in_sample, FDNOrder, g_input_gain', g_output_gain, g_feedback_matrix, g_delays, g_target_t60, g_target_power, fs);
+% 
+%     [g_irValues,g_irT60, g_echo_density, g_signal_with_direct]  = ir_analysis(g_ir_time_domain, fs);
+% 
+%     [g_schroder_energy_db, g_array_30dB , g_w ]= rt30_from_spectrum(g_signal_with_direct, fs);
+% 
+%     g_initial_spectrum = g_schroder_energy_db(1,:);
+% 
+%     [g_upper, g_lower] = envelope(g_signal_with_direct, round(fs/300), 'peak');
+% 
+% 
+%     %% Figures
+%     fprintf(">>>[INFO] start figures results %s...\n", targetMeasures(i).name);
+%     figure(1)
+%     clf
+%     semilogx(t_w, t_array_30dB'*2, 'DisplayName','target t60')
+%     hold on
+%     semilogx(g_w, g_array_30dB'*2, 'DisplayName','generated t60')
+%     semilogx(OctaveCenterFreqs, g_target_t60, 'DisplayName','wanted rt60')
+%     legend
+% 
+% 
+%     figure(2)
+%     clf
+%     semilogx(t_w, g_initial_spectrum, 'DisplayName','generated power')
+%     hold on
+%     semilogx(g_w, t_initial_spectrum , 'DisplayName','target power')
+%     legend
+% 
+%     figure(3)
+%     clf
+%     plot(g_upper,'DisplayName','GenUpper')
+%     hold on 
+%     plot(t_upper,'DisplayName','TarUpper')
+%     
+%     figure(4)
+%     clf
+%     hold on
+%     plot(g_lower,'DisplayName','GenLower')
+%     plot(t_lower,'DisplayName','TarLower')
+% 
+%     %% Write audio file
+%     
+% 
+%     %%save values 
+% 
+%     save(['./results/' , targetMeasures(i).name, '_parameters.mat'], 'x'); 
 
 end
 
