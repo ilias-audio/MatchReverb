@@ -28,9 +28,9 @@ for i= 1:length(targetIR)
     
     clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetIR targetIRPath i
     
-    resultPath = "./results";
+    resultPath = "./results/parameters";
     
-    full_filename  = fullfile(resultPath, [targetIR(i).name '_parameters.mat']);
+    full_filename  = fullfile(resultPath, ['gen_' targetIR(i).name(1:end-4) '_parameters.mat']);
     
     if isfile(full_filename)
         

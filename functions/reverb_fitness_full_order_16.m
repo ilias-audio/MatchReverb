@@ -10,6 +10,8 @@ function cost = reverb_fitness_full_order_16(TargetIRMeasures, x)
     GeneratedIRMeasures = MeasureImpulseResponseFeatures(g_ir_time_domain, TargetIRMeasures.SAMPLE_RATE, "generated_IR");
    
     cost = CompareImpulseResponsesFeatures(TargetIRMeasures, GeneratedIRMeasures);
+    
+    fprintf("[LOG] Local Cost: %f \n", cost);
 
     
 

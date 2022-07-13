@@ -24,7 +24,7 @@ FDNOrder = 16;
 population_size = 10;
 numOfGen = 3;
 
-for i= 10:length(targetMeasures)
+for i= 29:29
 
     clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetMeasures targetIRPath i
 
@@ -39,8 +39,8 @@ for i= 10:length(targetMeasures)
 
 
     boundary_target_t60  = [ones(1,10)*0.01; ones(1,10)*6];
-    boundary_input_gain  = [ones(1,16)*-2; ones(1,16)*2];
-    boundary_output_gain = [ones(1,16)*-2; ones(1,16)*2];
+    boundary_input_gain  = [ones(1,16)*-1; ones(1,16)*1];
+    boundary_output_gain = [ones(1,16)*-1; ones(1,16)*1];
     boundary_delays      = [ones(1,16)*50; ones(1,16)*5000];
     boundary_power       = [ones(1,10)*-15; ones(1,10)*15];
 
@@ -55,7 +55,7 @@ for i= 10:length(targetMeasures)
 
     options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
         'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',numOfGen, ...
-        "PopulationSize",population_size, 'UseParallel', true);
+        "PopulationSize",population_size, 'UseParallel', false);
 
 
     FitnessFunction = @(x)reverb_fitness_full_order_16(measures, x);
@@ -64,8 +64,8 @@ for i= 10:length(targetMeasures)
     [x,fval] = ga(FitnessFunction,numberOfVariables,[],[],[],[],lb,ub, [], options);
     
     fprintf(">>>[INFO] start saving results %s...\n", targetMeasures(i).name);
-
-    [g_input_gain, g_output_gain, g_delays] = splitXinInParameters(x);
+%%
+    [g_input_gain, g_output_gain, g_delays] = splitXInParameters(x);
 
 
     g_ir_time_domain = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);

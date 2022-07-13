@@ -11,3 +11,8 @@ todo:
 - explore in details the results of the dataset
 - quick prototype of the early reflection devices (On mac)
 
+try to see if there is a 10 log(x) that should be turned into a 20 log(x) or
+the other way around... especially for the rt30 and spectrum...
+
+... interesting. it does seem to make a difference 
+let's try to use this as a measure and see if it reduces the error on one impulse response.

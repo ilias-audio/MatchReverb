@@ -53,55 +53,66 @@ fprintf(">>>[INFO] Pre-Delay compare...\n");
 for i= 1:length(generatedMeasures)
     t_predelay(i) = target_measures(i).PREDELAY;
     g_predelay(i) = generated_measures(i).PREDELAY;
-    e_predelay(i) = (t_predelay(i) - g_predelay(i));
+    e_predelay(i) = abs((t_predelay(i) - g_predelay(i)));
 end
-fprintf(">>>[RESULT] Pre-Delay MSE = %f \n\n", mse(t_predelay, g_predelay));
+fprintf(">>>[RESULT] Pre-Delay MSE = %f \n\n", (mean(e_predelay)));
 
 fprintf(">>>[INFO] Global RT60 compare...\n");
 for i= 1:length(generatedMeasures)
     t_t60(i) = target_measures(i).T60;
     g_t60(i) = generated_measures(i).T60;
-    e_t60(i) = (t_t60(i) - g_t60(i));
+    e_t60(i) = abs((t_t60(i) - g_t60(i)));
 end
-fprintf(">>>[RESULT] RT60 MSE = %f...\n\n", mse(t_t60, g_t60));
+fprintf(">>>[RESULT] RT60 MSE = %f...\n\n", (mean(e_t60)));
 
 fprintf(">>>[INFO] Global EDT compare...\n");
 for i= 1:length(generatedMeasures)
     t_edt(i) = target_measures(i).EDT;
     g_edt(i) = generated_measures(i).EDT;
-    e_edt(i) = (t_edt(i) - g_edt(i));
+    e_edt(i) = abs(t_edt(i) - g_edt(i));
 end
-fprintf(">>>[RESULT] EDT MSE = %f...\n\n", mse(t_edt, g_edt));
+fprintf(">>>[RESULT] EDT MSE = %f...\n\n", sqrt(mse(t_edt, g_edt)));
 
 fprintf(">>>[INFO] Global C80 compare...\n");
 for i= 1:length(generatedMeasures)
     t_c80(i) = target_measures(i).C80;
     g_c80(i) = generated_measures(i).C80;
-    e_c80(i) = (t_c80(i) - g_c80(i));
+    e_c80(i) = abs((t_c80(i) - g_c80(i)));
 end
-fprintf(">>>[RESULT] C80 MSE = %f...\n\n", mse(t_c80, g_c80));
+fprintf(">>>[RESULT] C80 MSE = %f...\n\n", (mean(e_c80)));
 
 fprintf(">>>[INFO] Global BR compare...\n");
 for i= 1:length(generatedMeasures)
     t_br(i) = target_measures(i).BR;
     g_br(i) = generated_measures(i).BR;
-    e_br(i) = (t_br(i) - g_br(i));
+    e_br(i) = abs((t_br(i) - g_br(i)));
 end
-fprintf(">>>[RESULT] BR MSE = %f...\n\n", mse(t_br, g_br));
+fprintf(">>>[RESULT] BR MSE = %f...\n\n", (mean(e_br)));
 
 fprintf(">>>[INFO] Global RT30(f) compare...\n");
 for i= 1:length(generatedMeasures)
     t_rt30f(i,1:length(target_measures(i).SPECTRUM_T30)) = target_measures(i).SPECTRUM_T30;
     g_rt30f(i,1:length(generated_measures(i).SPECTRUM_T30)) = generated_measures(i).SPECTRUM_T30;
-    e_rt30f(i) = mse(t_rt30f(i,:), g_rt30f(i,:));
+    e_rt30f(i) = mean(abs(2*t_rt30f(i,:) - 2*g_rt30f(i,:)));
 end
-fprintf(">>>[RESULT] RT30(f) MSE = %f...\n", mse(e_rt30f));
+fprintf(">>>[RESULT] RT30(f) MSE = %f...\n", (mean(e_rt30f)));
 
 %%
 fprintf(">>>[INFO] Global POWER(f) compare...\n");
 for i= 1:length(generatedMeasures)
     t_ini_spectr(i,1:length(target_measures(i).INITIAL_SPECTRUM)) = target_measures(i).INITIAL_SPECTRUM;
     g_ini_spectr(i,1:length(generated_measures(i).INITIAL_SPECTRUM)) = generated_measures(i).INITIAL_SPECTRUM;
-    e_ini_spectr(i) = mse(t_ini_spectr(i,:), g_rt30f(i,:));
+    e_ini_spectr(i) = mean(abs(t_ini_spectr(i,:) - g_ini_spectr(i,:)));
 end
-fprintf(">>>[RESULT] POWER(f) MSE = %f...\n", mse(e_ini_spectr));
+fprintf(">>>[RESULT] POWER(f) MSE = %f...\n", (mean(e_ini_spectr)));
+
+
+figure(11)
+x = [ e_t60;e_edt; e_predelay ; e_rt30f];
+boxplot(x','labels',{'Reverberation Time 60dB','Early Decay Time','Pre-Delay','RT_30(f)'})
+ylabel("RMSE in seconds (s)")
+
+figure(12)
+x = [ e_br;e_c80; e_ini_spectr];
+boxplot(x','labels',{'Bass Ratio','Clarity 80', 'Initial Power Spectrum'})
+ylabel("RMSE in decibels (dB)")
