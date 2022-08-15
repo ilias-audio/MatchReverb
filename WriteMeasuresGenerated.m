@@ -33,7 +33,7 @@ for i= 2:20
     g_ir_time_domain = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);
     
     measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, ['gen_' targetMeasures(i).name(1:end-13)]);
-
+    
     save(['./results/generated/' , ['gen_' targetMeasures(i).name(1:end-13)], '_measures.mat'], 'measures'); 
 
     

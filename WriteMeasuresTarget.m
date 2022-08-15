@@ -26,7 +26,7 @@ fprintf(">>>[INFO] %d Impulse responses found...\n", length(targetIR));
 
 
 
-for i= 1:length(targetIR)
+for i= 1:17
     
     fprintf(">>>[INFO] start IR %d/%d...\n", i , length(targetIR));
     

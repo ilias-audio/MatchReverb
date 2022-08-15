@@ -48,6 +48,15 @@ for i= 1:length(generatedMeasures)
     end
 end
 
+% for i= 1:length(generatedMeasures)
+%     fprintf("%d\n",i);
+%     generated_measures(i).COST = CompareImpulseResponsesFeatures(target_measures(i), generated_measures(i));
+%     measures = generated_measures(i);
+%     save(fullfile(generatedIRPath,generated_names(i)) , 'measures');
+% end
+
+
+
 %% pre delay compare
 fprintf(">>>[INFO] Pre-Delay compare...\n");
 for i= 1:length(generatedMeasures)
@@ -67,17 +76,17 @@ fprintf(">>>[RESULT] RT60 MSE = %f...\n\n", (mean(e_t60)));
 
 fprintf(">>>[INFO] Global EDT compare...\n");
 for i= 1:length(generatedMeasures)
-    t_edt(i) = target_measures(i).EDT;
-    g_edt(i) = generated_measures(i).EDT;
-    e_edt(i) = abs(t_edt(i) - g_edt(i));
+    t_edt(i,1:length(target_measures(i).SPECTRUM_EDT)) = target_measures(i).SPECTRUM_EDT;
+    g_edt(i,1:length(target_measures(i).SPECTRUM_EDT)) = generated_measures(i).SPECTRUM_EDT;
+    e_edt(i) = mean(abs(t_edt(i,:) - g_edt(i,:)));
 end
 fprintf(">>>[RESULT] EDT MSE = %f...\n\n", sqrt(mse(t_edt, g_edt)));
 
 fprintf(">>>[INFO] Global C80 compare...\n");
 for i= 1:length(generatedMeasures)
-    t_c80(i) = target_measures(i).C80;
-    g_c80(i) = generated_measures(i).C80;
-    e_c80(i) = abs((t_c80(i) - g_c80(i)));
+    t_c80(i,1:length(target_measures(i).SPECTRUM_C50)) = target_measures(i).SPECTRUM_C50;
+    g_c80(i,1:length(target_measures(i).SPECTRUM_C50)) = generated_measures(i).SPECTRUM_C50;
+    e_c80(i) = mean(abs((t_c80(i,:) - g_c80(i,:))));
 end
 fprintf(">>>[RESULT] C80 MSE = %f...\n\n", (mean(e_c80)));
 

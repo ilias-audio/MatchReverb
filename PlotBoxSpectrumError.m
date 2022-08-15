@@ -51,10 +51,10 @@ end
 
 %%
 fprintf(">>>[INFO] Global POWER(f) compare...\n");
-for i= 2:length(generatedMeasures)
+for i= 1:length(generatedMeasures)
     t_ini_spectr(i,1:length(target_measures(i).INITIAL_SPECTRUM)) = target_measures(i).INITIAL_SPECTRUM;
     g_ini_spectr(i,1:length(generated_measures(i).INITIAL_SPECTRUM)) = generated_measures(i).INITIAL_SPECTRUM;
-    e_ini_spectr(i,:) = ((t_ini_spectr(i,:) - g_ini_spectr(i,:)));
+    e_ini_spectr(i,:) = abs((t_ini_spectr(i,:) - g_ini_spectr(i,:)));
 end
 
 fprintf(">>>[RESULT] POWER(f) MSE = %f...\n", sqrt(mse(e_ini_spectr)));

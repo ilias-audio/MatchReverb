@@ -11,6 +11,9 @@
 % targetIR = dir(fullfile(targetIRPath, '**/*.*'));
 % targetIR = targetIR(~[targetIR.isdir]);
 
+%IMPLEMENT THIS:: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6375510/
+
+
 fprintf(">>>[INFO] Setup Paths...\n");
 targetIRPath = './results/target';
 targetMeasures = dir(fullfile(targetIRPath, '**/*measures.mat'));
@@ -18,15 +21,15 @@ targetMeasures = targetMeasures(~[targetMeasures.isdir]);
 
 fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
 
-OctaveCenterFreqs = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000];
+%OctaveCenterFreqs = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000];
 FDNOrder = 16;
 
-population_size = 10;
-numOfGen = 3;
+population_size = 5;
+numOfGen = 1;
 
-for i= 29:29
+for i= 1:17
 
-    clearvars -except numOfGen population_size FDNOrder OctaveCenterFreqs targetMeasures targetIRPath i
+    clearvars -except numOfGen population_size FDNOrder  targetMeasures targetIRPath i
 
     
     
@@ -39,8 +42,8 @@ for i= 29:29
 
 
     boundary_target_t60  = [ones(1,10)*0.01; ones(1,10)*6];
-    boundary_input_gain  = [ones(1,16)*-1; ones(1,16)*1];
-    boundary_output_gain = [ones(1,16)*-1; ones(1,16)*1];
+    boundary_input_gain  = [ones(1,16)*-1; ones(1,16)*10];
+    boundary_output_gain = [ones(1,16)*-1; ones(1,16)*10];
     boundary_delays      = [ones(1,16)*50; ones(1,16)*5000];
     boundary_power       = [ones(1,10)*-15; ones(1,10)*15];
 
@@ -71,6 +74,8 @@ for i= 29:29
     g_ir_time_domain = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);
     
     measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, ['gen_' targetMeasures(i).name(1:end-13)]);
+    
+    measures.COST = fval;
 
     save(['./results/generated/' , ['gen_' targetMeasures(i).name(1:end-13)], '_measures.mat'], 'measures'); 
 
@@ -78,68 +83,6 @@ for i= 29:29
 
     g_fileName = ['gen_', targetMeasures(i).name(1:end-13), '.wav'];
     audiowrite(fullfile(targetIRPath, "../audio",g_fileName), g_ir_time_domain, measures.SAMPLE_RATE);
-
-% 
-%     %% Generated IR
-%     fprintf(">>>[INFO] start analysis results %s...\n", targetMeasures(i).name);
-%     g_target_t60 = t_target_t60; %% 0.01 : 6.0  // 10
-%     g_target_t60(10) = g_target_t60(10) / 2;
-%     g_input_gain = x(1:16);  %% -1 : 1    // 16
-%     g_output_gain = x(17:32); %% -1 : 1    // 16
-%     g_delays = ceil(x(33:48)); %% 50 : 5000      // 16
-%     g_feedback_matrix = randomOrthogonal(FDNOrder);
-% 
-%     %g_target_power = x(49:58);  % dB
-%     g_target_power = t_initial_spectrum_values;  % dB
-% 
-%     g_ir_time_domain = gen_IR_f(t_length_in_sample, FDNOrder, g_input_gain', g_output_gain, g_feedback_matrix, g_delays, g_target_t60, g_target_power, fs);
-% 
-%     [g_irValues,g_irT60, g_echo_density, g_signal_with_direct]  = ir_analysis(g_ir_time_domain, fs);
-% 
-%     [g_schroder_energy_db, g_array_30dB , g_w ]= rt30_from_spectrum(g_signal_with_direct, fs);
-% 
-%     g_initial_spectrum = g_schroder_energy_db(1,:);
-% 
-%     [g_upper, g_lower] = envelope(g_signal_with_direct, round(fs/300), 'peak');
-% 
-% 
-%     %% Figures
-%     fprintf(">>>[INFO] start figures results %s...\n", targetMeasures(i).name);
-%     figure(1)
-%     clf
-%     semilogx(t_w, t_array_30dB'*2, 'DisplayName','target t60')
-%     hold on
-%     semilogx(g_w, g_array_30dB'*2, 'DisplayName','generated t60')
-%     semilogx(OctaveCenterFreqs, g_target_t60, 'DisplayName','wanted rt60')
-%     legend
-% 
-% 
-%     figure(2)
-%     clf
-%     semilogx(t_w, g_initial_spectrum, 'DisplayName','generated power')
-%     hold on
-%     semilogx(g_w, t_initial_spectrum , 'DisplayName','target power')
-%     legend
-% 
-%     figure(3)
-%     clf
-%     plot(g_upper,'DisplayName','GenUpper')
-%     hold on 
-%     plot(t_upper,'DisplayName','TarUpper')
-%     
-%     figure(4)
-%     clf
-%     hold on
-%     plot(g_lower,'DisplayName','GenLower')
-%     plot(t_lower,'DisplayName','TarLower')
-% 
-%     %% Write audio file
-%     
-% 
-%     %%save values 
-% 
-%     save(['./results/' , targetMeasures(i).name, '_parameters.mat'], 'x'); 
-
 end
 
 

@@ -32,7 +32,7 @@ function PlotEchoDensity(target_measures,generated_measures)
     
     
     %% PRINTING
-    subplot(2, 1, 2)
+    %subplot(2, 1, 2)
     hold on
 
     plot((1:length(t_echo_density))/target_measures.SAMPLE_RATE, t_echo_density, 'k')
