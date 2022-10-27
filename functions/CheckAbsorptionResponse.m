@@ -23,11 +23,10 @@ t_target_t60(10) = t_target_t60(10)/2;
 zAbsorption = zSOS(absorptionGEQ(t_target_t60, delays, target_measures.SAMPLE_RATE),'isDiagonal',true);
 
 Fs = target_measures.SAMPLE_RATE;
-for delay_n = 7:16
-%delay_n = 7;
+delay_n = 1;
 [h, w] = freqz(squeeze(zAbsorption.sos(delay_n, 1, :, :)), 1024, Fs);
-semilogx(w, 20*log10(abs(h)));
-end
+
+
 
 %freq = (w*target_measures.SAMPLE_RATE)/2;
 

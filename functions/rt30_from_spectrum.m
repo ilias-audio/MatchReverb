@@ -28,17 +28,17 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
 
   % Predelay
   irDelay = irInitSample / fs;
-
+  max_EDCdB = 10 * log10(max(irEDC));
   % T60 & EDT
   % T60 = Calculate T30 (time from -5 to -35 dB) and multiply by 2
   % EDT = Calculate time from 0 to -10 dB
-  ir5dBSample = find(irEDCdB < -5, 1);
+  ir5dBSample = find(irEDCdB < max_EDCdB-5, 1);
   if isempty(ir5dBSample), ir5dBSample = -Inf; end
 
-  ir10dBSample = find(irEDCdB < -10, 1);
+  ir10dBSample = find(irEDCdB < max_EDCdB-10, 1);
   if isempty(ir10dBSample), ir10dBSample = Inf; end
 
-  ir25dBSample = find(irEDCdB < -25, 1);
+  ir25dBSample = find(irEDCdB < max_EDCdB-25, 1);
   if isempty(ir25dBSample), ir25dBSample = Inf; end
 
   irT60 = (ir25dBSample - ir5dBSample) * 3 / fs;
@@ -63,7 +63,7 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
   highContent = mean(irfft((f500 + 1):f2000));
   irBR = lowContent - highContent;
 
-  [t_s, t_w, t_t ] = spectrogram(signal, 256, 255, 512, fs, 'yaxis');
+  %[t_s, t_w, t_t ] = spectrogram(signal, 256, 255, 512, fs, 'yaxis');
   
     %% add the RT60 vs frequency
     octFilBank = octaveFilterBank('1 octave',fs, ...
@@ -115,6 +115,10 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
     [t_upper, t_lower] = envelope(signal, round(fs/300), 'peak');
     
     edt_sample = floor(irEDT * fs);
+    if(isinf(edt_sample))
+       edt_sample = 0.08 * fs;
+        
+    end
 
 
   irValues = struct( ...

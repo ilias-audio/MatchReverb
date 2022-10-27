@@ -1,59 +1,48 @@
 function cost = CompareImpulseResponsesFeatures(TargetMeasures, GeneratedMeasures)
+    %% very senstivive to IR noise...
 
-    t_schroeder_lin = TargetMeasures.SCHROEDER;
+
+    t_signal = TargetMeasures.SIGNAL;
+    g_signal = GeneratedMeasures.SIGNAL;
     
-    g_schroeder_lin = ones(size(t_schroeder_lin))*0.00001;
+    t_fs = TargetMeasures.SAMPLE_RATE;
+    g_fs = GeneratedMeasures.SAMPLE_RATE;
     
-    g_schroeder_lin(1:length(GeneratedMeasures.SCHROEDER(:,1)),:) = GeneratedMeasures.SCHROEDER;
-
-    error_shroeder = abs(t_schroeder_lin - g_schroeder_lin);
+    window_len = round(0.003 * t_fs); % win > olvp
+    ovlp_len = round(0.002 * t_fs);
     
+    noise_power = -75;
+    additive_noise = (rand(size(g_signal)) - 0.5) * 10^(noise_power/20);
+
+%%
+    %[t_coeffs] = mfcc(t_signal, t_fs, "OverlapLength", ovlp_len,"Window", hamming(window_len, "periodic"),  "LogEnergy","Ignore");
+    %[g_coeffs] = mfcc((g_signal),g_fs, "OverlapLength", ovlp_len,"Window", hamming(window_len, "periodic"),  "LogEnergy","Ignore");
     
-
-
-%     [t_struct , t_schroder_energy_db , t_w ] = rt30_from_spectrum(TargetMeasures.SIGNAL, TargetMeasures.SAMPLE_RATE);
-%   
-%     t_schroder_energy_db(isinf(t_schroder_energy_db)) = -150;
-%   
-%     g_schroder_energy_db = ones(size(t_schroder_energy_db))*(-120);
-%     
-%     [g_struct, g_schroder_energy_db_raw , t_w ] = rt30_from_spectrum(GeneratedMeasures.SIGNAL, GeneratedMeasures.SAMPLE_RATE);
-%     
-%     g_schroder_energy_db(1:length(g_schroder_energy_db_raw(:,1)),:) = g_schroder_energy_db_raw;
-% 
-% 
-%      sample_to_match = floor(max(TargetMeasures.T60*TargetMeasures.SAMPLE_RATE));
-%      
-%      if sample_to_match > length(t_schroeder_lin(:,1))
-%          sample_to_match = length(t_schroeder_lin(:,1)) - 1;
-%      end
-% 
-% 
-%     weight_local_spectrum = 1;
-% 
-%     
-
-    error_local_spectrum = sum(sum(error_shroeder));
+   
     
-%     t_lin_sch = 10.^(TargetMeasures.SCHROEDER_DB/10);
-%     g_lin_sch = 10.^(GeneratedMeasures.SCHROEDER_DB/10);
-% 
-%     diff_spec = t_lin_sch - g_lin_sch;
-% 
-% 
-%     error_local_spectrum = mean(mean(abs(diff_spec)));
-
-
-%     error_upper_envelope = immse(TargetMeasures.UPPER_ENVELOPE(1:sample_to_match), GeneratedMeasures.UPPER_ENVELOPE(1:sample_to_match));
-% 
-%     error_lower_envelope = immse(GeneratedMeasures.LOWER_ENVELOPE(1:sample_to_match), GeneratedMeasures.LOWER_ENVELOPE(1:sample_to_match));
-%     
-%     error_rt30 = immse(GeneratedMeasures.SPECTRUM_T30,TargetMeasures.SPECTRUM_T30);
+    %sample_to_match = round((length(t_coeffs) * TargetMeasures.T60 * t_fs) /length(t_signal));
+    %min_length_coeff = min(length(t_coeffs), length(g_coeffs));
     
     
-    cost = ( error_local_spectrum);
     
-    cost(isnan(cost)) = 10^50;
-
-
-end 
+    
+   % if sample_to_match > min_length_coeff
+   %     sample_to_match = min_length_coeff;
+   % end
+    
+   % cost = mean(mean(abs(t_coeffs(1:sample_to_match,1:end) - g_coeffs(1:sample_to_match,1:end))));
+ %%   
+    t_sample_to_match = round(0.5 * TargetMeasures.T60 * TargetMeasures.SAMPLE_RATE);
+    g_sample_to_match = length(GeneratedMeasures.SCHROEDER(:,1));
+    
+    min_length = min(t_sample_to_match, g_sample_to_match);
+    
+    t_schroeder = 10 .* log10(TargetMeasures.SCHROEDER(1:min_length,:));
+    g_schroeder = 10 .* log10(GeneratedMeasures.SCHROEDER(1:min_length,:));
+    
+    t_schroeder(t_schroeder < max(max(t_schroeder))-60) = max(max(t_schroeder))-60;
+    g_schroeder(g_schroeder < max(max(g_schroeder))-60) = max(max(g_schroeder))-60;
+    
+    fprintf(">>>[INFO] T60 %d...\n", min_length);
+    cost = mean(mean(abs(t_schroeder - g_schroeder)));
+end

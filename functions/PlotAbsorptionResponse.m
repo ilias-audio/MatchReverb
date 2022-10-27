@@ -15,11 +15,7 @@ semilogx(generated_Structure.FREQ_T30, generated_Structure.SPECTRUM_T30);
 
 OctaveCenterFreqs = [ 46, 63, 125, 250, 500, 1000, 2000, 4000, 8000 , 16000];
 
-values_time_freq_target = [target_Structure.SPECTRUM_T30',target_Structure.FREQ_T30];
-
-rt30 = interp1( values_time_freq_target(:, 2), values_time_freq_target(:, 1), OctaveCenterFreqs');
-
-semilogx(OctaveCenterFreqs, rt30);
+semilogx(target_Structure.FREQ_T30, target_Structure.SPECTRUM_T30);
 
 
 legend('Target RT30', 'Best Generated IR RT30', 'Requested RT30 Curve');

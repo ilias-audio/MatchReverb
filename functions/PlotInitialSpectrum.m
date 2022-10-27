@@ -5,8 +5,8 @@ function PlotInitialSpectrum(target_Structure, generated_Structure)
 figure(4)
 clf
 
-target_Structure.FREQ_T30 = target_Structure.FREQ_T30 + (187.5/2);
-generated_Structure.FREQ_T30 = generated_Structure.FREQ_T30 + (187.5/2);
+target_Structure.FREQ_T30 = target_Structure.FREQ_T30 ;
+generated_Structure.FREQ_T30 = generated_Structure.FREQ_T30 ;
 
 semilogx(target_Structure.FREQ_T30, target_Structure.INITIAL_SPECTRUM);
 hold on 

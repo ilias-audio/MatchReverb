@@ -10,7 +10,7 @@ clf;
 [t_schroder_energy_db , t_array_30dB , t_w ]= rt30_from_spectrum(target_Structure.SIGNAL, target_Structure.SAMPLE_RATE);
 [g_schroder_energy_db , g_array_30dB , g_w ]= rt30_from_spectrum(generated_Structure.SIGNAL, generated_Structure.SAMPLE_RATE);
 
-diff_energy_db = t_schroder_energy_db - g_schroder_energy_db;
+diff_energy_db = t_schroder_energy_db.SCHROEDER - g_schroder_energy_db.SCHROEDER;
 
 
 
