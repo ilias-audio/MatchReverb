@@ -16,21 +16,10 @@ targetIR = targetIR(~[targetIR.isdir]);
 
 fprintf(">>>[INFO] %d Impulse responses found...\n", length(targetIR));
 
-% FDNOrder = 16;
-% 
-% 
-% population_size = 10;
-% numOfGen = 3;
-% 
-% results_ir = zeros([4, length(targetIR)]);
-
-
-
 for i= 1:17
     
     fprintf(">>>[INFO] start IR %d/%d...\n", i , length(targetIR));
     
-    %clearvars -except numOfGen population_size FDNOrder targetIR OctaveCenterFreqs targetIRPath i results_ir
     clearvars -except  targetIR i
     
 

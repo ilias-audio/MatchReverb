@@ -1,2 +1,4 @@
-results
+results/
 IR_*
+download/
+.DS_Store

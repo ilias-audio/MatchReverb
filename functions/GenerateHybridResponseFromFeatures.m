@@ -21,7 +21,7 @@ function [irTimeDomain] = GenerateHybridResponseFromFeatures(MeasuresStruct, del
     zAbsorption = zSOS(absorptionGEQ(t_target_t60, delays, MeasuresStruct.SAMPLE_RATE),'isDiagonal',true);
 
     % power correction filter
-    powerCorrectionSOS = designGEQ(t_initial_spectrum_values, MeasuresStruct.SAMPLE_RATE);
+    powerCorrectionSOS = designGEQ(t_initial_spectrum_values);%, MeasuresStruct.SAMPLE_RATE);
     outputFilters = zSOS(permute(powerCorrectionSOS,[3 4 1 2]) .* output_gain);
 
     %% Initialize

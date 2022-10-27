@@ -62,14 +62,10 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
   lowContent = mean(irfft(f125:f500));
   highContent = mean(irfft((f500 + 1):f2000));
   irBR = lowContent - highContent;
-
-  %[t_s, t_w, t_t ] = spectrogram(signal, 256, 255, 512, fs, 'yaxis');
   
     %% add the RT60 vs frequency
     octFilBank = octaveFilterBank('1 octave',fs, ...
-                                  'FrequencyRange',[18 22000]);
-
-    %clear_signal = squeeze(signal');                          
+                                  'FrequencyRange',[18 22000]);                        
     audio_out = octFilBank(signal);
 
     bands_ir = squeeze(audio_out(:,:,:));
@@ -77,12 +73,6 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
     [schroeder_energy schroder_energy_db] = schroeder(abs(bands_ir));    
     
     relative_band_energy = ( schroder_energy_db - schroder_energy_db(1,:));
-
-    %max_audible_freq = find(t_w(:,1) >= 18000, 1) - 1;
-
-    %rt_value = -15;
-
-    %schroder_energy_db = schroder_energy_db(:, 1:max_audible_freq);
     
     for n = 1:length(relative_band_energy(1, :))
         ir5dBSample = find(relative_band_energy(:,n) < -5, 1);
@@ -98,17 +88,13 @@ function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
         array_edt(n) = (ir10dBSample - irInitSample) / fs;
 
 
-        % C50 (clarity)
+    % C50 (clarity)
       sample_50ms = round(0.05 * fs);
-      % if sample_50ms >= irParams.NUM_SAMPLES, f = Inf; return; end
       earlyEnergy = schroeder_energy(1,n) - schroeder_energy(sample_50ms,n);
       lateEnergy  = schroeder_energy(sample_50ms,n);
-      % lateEnergy(lateEnergy <= 0) = Inf;
-        array_c50(n) = 10 .* log10(earlyEnergy ./ lateEnergy);
+      array_c50(n) = 10 .* log10(earlyEnergy ./ lateEnergy);
     end
-        
-        %array_30dB = ((-30/rt_value)*(array_30dB))/fs;
-  
+
     t_w =getCenterFrequencies(octFilBank);
 
 
