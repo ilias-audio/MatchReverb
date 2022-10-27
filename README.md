@@ -1,10 +1,17 @@
-# MatchReverb
-Match a target Impulse Response with an FDN
+# MatchReverb: Method for matching RIR with FDN
+Code accompanying the Convention Paper:
 
-Run: 
+*Ilias Ibnyahya, Joshua D. Reiss "A Method for matching room impulse responses with feedback delay networks", Paper 35, 153rd AES Convention, 2022, New York*
 
+## How to use
+
+To download the Impulse Response dataset from OpenAIR:
+```
 python GetOpenAirIR.py
+```
 
-Then in Matlab run:
 
+Then in Matlab run from the directory:
+```
 Fullflow.m
+```
