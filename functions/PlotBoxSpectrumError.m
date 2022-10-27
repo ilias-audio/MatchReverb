@@ -12,7 +12,7 @@ targetIRPath = './results/target';
 targetMeasures = dir(fullfile(targetIRPath, '**/*measures.mat'));
 targetMeasures = targetMeasures(~[targetMeasures.isdir]);
 
-generatedIRPath = './results/hybrid';
+generatedIRPath = './results/generated';
 generatedMeasures = dir(fullfile(generatedIRPath, '**/*measures.mat'));
 generatedMeasures = generatedMeasures(~[generatedMeasures.isdir]);
 
@@ -54,16 +54,11 @@ fprintf(">>>[INFO] Global POWER(f) compare...\n");
 for i= 1:length(generatedMeasures)
     t_ini_spectr(i,1:length(target_measures(i).INITIAL_SPECTRUM)) = target_measures(i).INITIAL_SPECTRUM;
     g_ini_spectr(i,1:length(generated_measures(i).INITIAL_SPECTRUM)) = generated_measures(i).INITIAL_SPECTRUM;
-    e_ini_spectr(i,:) = abs((t_ini_spectr(i,:)' - g_ini_spectr(i,:)'));
+    e_ini_spectr(i,:) = abs((t_ini_spectr(i,:) - g_ini_spectr(i,:)));
 end
 
 fprintf(">>>[RESULT] POWER(f) MSE = %f...\n", sqrt(mse(e_ini_spectr)));
 
 figure(13)
-yyaxis left
-x = [e_ini_spectr];
+x = [ e_ini_spectr];
 boxplot(x);
-yyaxis right
-plot(mean(t_ini_spectr))
-hold on 
-plot(mean(g_ini_spectr))
