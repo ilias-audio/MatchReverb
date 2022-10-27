@@ -1,9 +1,3 @@
 [submodule "libs/FDNToolbox"]
 	path = libs/FDNToolbox
 	url = https://github.com/SebastianJiroSchlecht/fdnToolbox.git
-[submodule "libs/EchoDensity"]
-	path = libs/EchoDensity
-	url = https://github.com/microsoft/EchoDensity.git
-[submodule "libs/GeneticReverb"]
-	path = libs/GeneticReverb
-	url = https://github.com/edward-ly/GeneticReverb.git
