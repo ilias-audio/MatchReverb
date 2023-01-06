@@ -1,4 +1,4 @@
-function [irValues, schroder_energy_db , t_w]= rt30_from_spectrum(signal, fs)
+function [irValues, schroder_energy_db , t_w] = rt30_from_spectrum(signal, fs)
 % Input arguments:
 % ir = column vector containing impulse response
 % numSamples = length of impulse response

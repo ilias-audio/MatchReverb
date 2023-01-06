@@ -3,7 +3,6 @@
 % add functions and libs to path
 
 %% Setup Steps
-current_dir = pwd;
 target_IR_folder = fullfile(pwd, "IR_mono");
 target_mesures_dir = fullfile(pwd, "results/target/measures");
 MeasureImpulseResponsesDirectory(target_IR_folder, target_mesures_dir);

@@ -12,7 +12,7 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
     targetMeasures = targetMeasures(~[targetMeasures.isdir]);
 
     fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
-    population_size = 50;
+    population_size = 20;
     numOfGen = 5;
     
     mkdir(fullfile(result_dir));
