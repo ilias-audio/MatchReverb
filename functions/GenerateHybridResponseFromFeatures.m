@@ -22,7 +22,8 @@ function [irTimeDomain] = GenerateHybridResponseFromFeatures(MeasuresStruct, del
     t_initial_spectrum_values = zeros(size(MeasuresStruct.INITIAL_SPECTRUM));
 
     [direct_target, ~] = splitEarlyLate(MeasuresStruct);
-    direct = ones(1,1) * direct_linear_gain;
+    %direct = ones(1,1) * direct_linear_gain; to avoid comb effect
+    direct = ones(1,1);
     feedback_matrix = randomOrthogonal(FDNOrder);
     % absorption filters
     zAbsorption = zSOS(absorptionGEQ(t_target_t60, delays, MeasuresStruct.SAMPLE_RATE),'isDiagonal',true);

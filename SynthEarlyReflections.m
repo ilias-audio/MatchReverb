@@ -23,8 +23,8 @@ plot(early_reflections)
 
 % get the max of the sequence
 [delays , gains] = find_early_reflection_peaks(early_reflections, 100);
-%hold on
-%plot(delays, gains, '.');
+hold on
+plot(delays, gains, '.');
 
 
 

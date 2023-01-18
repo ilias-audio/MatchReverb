@@ -12,8 +12,8 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
     targetMeasures = targetMeasures(~[targetMeasures.isdir]);
 
     fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
-    population_size = 20;
-    numOfGen = 5;
+    population_size = 10;
+    numOfGen = 3;
     
     mkdir(fullfile(result_dir));
     mkdir(fullfile(result_dir, "audio"));
@@ -40,6 +40,9 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
         elseif (OptimizationType == "Hybrid")
             lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:), boundary_direct_gain(1,:)];
             ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:), boundary_direct_gain(2,:)];
+        elseif (OptimizationType == "Tap")
+            lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:), boundary_direct_gain(1,:)];
+            ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:), boundary_direct_gain(2,:)];
         else
             error(">>>[ERROR] Unvalid Optimization Mode");
         end
@@ -54,6 +57,8 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
             FitnessFunction = @(x)reverb_fitness_full_order_16(measures, x);
         elseif (OptimizationType == "Hybrid")
             FitnessFunction = @(x)reverb_fitness_hybrid_order_16(measures, x);
+        elseif (OptimizationType == "Tap")
+            FitnessFunction = @(x)reverb_fitness_tap_order_16(measures, x);
         end
 
         fprintf(">>>[INFO] start Genetic Algorithm %s...\n", targetMeasures(i).name);
@@ -67,6 +72,10 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
             [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters(x);
             g_ir_time_domain = GenerateHybridResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
             name_header = 'hyb_';
+        elseif (OptimizationType == "Tap")
+            [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters(x);
+            g_ir_time_domain = GenerateTapResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
+            name_header = 'tap_';
         end
 
         measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, [name_header targetMeasures(i).name(1:end-13)]);
