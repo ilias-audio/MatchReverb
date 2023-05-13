@@ -1,4 +1,4 @@
-function [irTimeDomain] = GenerateTapResponseFromFeatures(MeasuresStruct, delays, input_gain, output_gain, direct_linear_gain)
+function [irTimeDomain difference_in_energy] = GenerateTapResponseFromFeatures(MeasuresStruct, delays, input_gain, output_gain, direct_linear_gain)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
     clf
@@ -21,7 +21,7 @@ function [irTimeDomain] = GenerateTapResponseFromFeatures(MeasuresStruct, delays
     
     t_initial_spectrum_values = zeros(size(MeasuresStruct.INITIAL_SPECTRUM));
 
-    %% TODO this section has to implement the tap delay
+    %% Tap Delay
     %[direct_target, ~] = splitEarlyLate(MeasuresStruct);
     [direct_target] = GenerateTapDelayfromEarlyReflections(MeasuresStruct, 100);
     %% 

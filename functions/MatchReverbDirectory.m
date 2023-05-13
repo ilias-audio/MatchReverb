@@ -13,7 +13,7 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
 
     fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
     population_size = 10;
-    numOfGen = 3;
+    numOfGen = 15;
     
     mkdir(fullfile(result_dir));
     mkdir(fullfile(result_dir, "audio"));
@@ -28,11 +28,15 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
         load(fullfile(targetMeasures(i).folder, targetMeasures(i).name));
 
         %% Genetic Algorithm
+        MIN_DELAY_IN_S = 0.00025;
+        MAX_DELAY_IN_S = 0.125;
 
         boundary_input_gain  = [ones(1,16)*-1; ones(1,16)*1];
         boundary_output_gain = [ones(1,16)*-1; ones(1,16)*1];
         boundary_direct_gain = [0;1];
-        boundary_delays      = [ones(1,16)*round(0.00025*measures.SAMPLE_RATE); ones(1,16)*round(0.125*measures.SAMPLE_RATE)];
+        boundary_delays      = [ones(1,16)*round(MIN_DELAY_IN_S * measures.SAMPLE_RATE); ones(1,16)*round(MAX_DELAY_IN_S * measures.SAMPLE_RATE)];
+        boundary_rt60s       = [ones(1,10)*0.05; ones(1,10)*10]; %% 50 : 5000 // 10
+        boundary_tone_filters = [ones(1,10)*-25; ones(1,10)*25]; %% 50 : 5000 // 10
 
         if (OptimizationType == "FDN_Only")
             lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:)];
@@ -43,14 +47,27 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
         elseif (OptimizationType == "Tap")
             lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:), boundary_direct_gain(1,:)];
             ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:), boundary_direct_gain(2,:)];
+        elseif (OptimizationType == "FDN_Only_69_parameters")
+            lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:), boundary_direct_gain(1,:), boundary_rt60s(1,:), boundary_tone_filters(1,:)];
+            ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:), boundary_direct_gain(2,:), boundary_rt60s(2,:), boundary_tone_filters(2,:)];
         else
             error(">>>[ERROR] Unvalid Optimization Mode");
         end
         numberOfVariables = length(ub);
 
+        %InitialPopulationMatrix = zeros((population_size, length(ub));
+        InitialPopulationInputGain = (2 .* rand(population_size, length(boundary_input_gain(1,:)))) - 1;  % between -1 and 1
+        InitialPopulationOutputGain = (2 .* rand(population_size, length(boundary_output_gain(1,:)))) - 1;% between -1 and 1
+        InitialPopulationDelays = randi([boundary_delays(1,1) boundary_delays(2,1)], [population_size, length(boundary_delays(1,:))]);% between 12 samples and 125ms
+        InitialPopulationDirectGain = (rand(population_size, length(boundary_direct_gain(1,:))));% between -1 and 1
+        InitialPopulationrt60s = (0.5 + rand(population_size, length(boundary_rt60s(1,:)))) .* (measures.SPECTRUM_T30 * 2);
+        InitialPopulationToneFilters = (0.5 + rand(population_size, length(boundary_tone_filters(1,:)))) .* measures.INITIAL_SPECTRUM;
+
+        InitialPopulationMatrix = [InitialPopulationInputGain InitialPopulationOutputGain InitialPopulationDelays InitialPopulationDirectGain InitialPopulationrt60s InitialPopulationToneFilters];
+
         options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
             'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',numOfGen, ...
-            "PopulationSize",population_size, 'UseParallel', false);
+            "PopulationSize",population_size, 'UseParallel', false, "InitialPopulationMatrix",InitialPopulationMatrix);
 
 
         if (OptimizationType == "FDN_Only")
@@ -59,23 +76,32 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
             FitnessFunction = @(x)reverb_fitness_hybrid_order_16(measures, x);
         elseif (OptimizationType == "Tap")
             FitnessFunction = @(x)reverb_fitness_tap_order_16(measures, x);
+        elseif (OptimizationType == "FDN_Only_69_parameters")
+            FitnessFunction = @(x)reverb_fitness_all_parameters(measures, x);
         end
 
         fprintf(">>>[INFO] start Genetic Algorithm %s...\n", targetMeasures(i).name);
         [x,fval] = ga(FitnessFunction,numberOfVariables,[],[],[],[],lb,ub, [], options);
+        %options = optimset('Display','iter','PlotFcns',@optimplotfval, 'MaxIter', numOfGen, "Boun");
+        %[x,fval] = fminsearch(FitnessFunction, InitialPopulationMatrix, options);
 
         if (OptimizationType == "FDN_Only")
             [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters([x,0]);
-            g_ir_time_domain = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);
+            [g_ir_time_domain g_tone_filter_gains] = GenerateImpulseResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain);
             name_header = 'gen_';
         elseif (OptimizationType == "Hybrid")
             [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters(x);
-            g_ir_time_domain = GenerateHybridResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
+            [g_ir_time_domain g_tone_filter_gains] = GenerateHybridResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
             name_header = 'hyb_';
         elseif (OptimizationType == "Tap")
             [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters(x);
-            g_ir_time_domain = GenerateTapResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
+            [g_ir_time_domain g_tone_filter_gains] = GenerateTapResponseFromFeatures(measures, g_delays, g_input_gain, g_output_gain, g_direct_gain);
             name_header = 'tap_';
+        elseif (OptimizationType == "FDN_Only_69_parameters")
+            % input_gain,output_gain, delays, direct, rt60s, tone_filters
+            [g_input_gain, g_output_gain, g_delays, g_direct_gain, g_rt60s, g_tone_filter_gains] = splitAllParameters(x);
+            [g_ir_time_domain] = GenerateImpulseResponseFromParameters(length(measures.SIGNAL), g_delays, g_input_gain, g_output_gain,  g_direct_gain, g_rt60s, g_tone_filter_gains , measures.SAMPLE_RATE , 16);
+            name_header = 'all_';
         end
 
         measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, [name_header targetMeasures(i).name(1:end-13)]);
@@ -84,7 +110,9 @@ function MatchReverbDirectory(measures_dir, result_dir, OptimizationType)
         measures.INPUT_GAIN = g_input_gain;
         measures.OUTPUT_GAIN = g_output_gain;
         measures.DELAYS = g_delays;
-        measures.DIRECT = g_direct_gain;        
+        measures.DIRECT = g_direct_gain;  
+        measures.TONE_GAINS = g_tone_filter_gains;
+        measures.ABSORPTION_FILTERS = g_rt60s;
        
         save(fullfile(result_dir, "measures", [name_header targetMeasures(i).name(1:end-13) '_measures.mat']), 'measures');
 

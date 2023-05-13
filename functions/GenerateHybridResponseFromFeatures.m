@@ -1,4 +1,4 @@
-function [irTimeDomain] = GenerateHybridResponseFromFeatures(MeasuresStruct, delays, input_gain, output_gain, direct_linear_gain)
+function [irTimeDomain difference_in_energy] = GenerateHybridResponseFromFeatures(MeasuresStruct, delays, input_gain, output_gain, direct_linear_gain)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
     clf

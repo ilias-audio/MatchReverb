@@ -87,7 +87,6 @@ function [irValues, schroder_energy_db , t_w] = rt30_from_spectrum(signal, fs)
         array_30dB(n) = (ir25dBSample - ir5dBSample) * 1.5 / fs;
         array_edt(n) = (ir10dBSample - irInitSample) / fs;
 
-
     % C50 (clarity)
       sample_50ms = round(0.05 * fs);
       earlyEnergy = schroeder_energy(1,n) - schroeder_energy(sample_50ms,n);
@@ -95,7 +94,15 @@ function [irValues, schroder_energy_db , t_w] = rt30_from_spectrum(signal, fs)
       array_c50(n) = 10 .* log10(earlyEnergy ./ lateEnergy);
     end
 
+    [v_32bands_freqs, v_32bands_rt60] = schroeder_rt60(signal, fs);
+
+
     t_w =getCenterFrequencies(octFilBank);
+
+    array_30dB(10) = v_32bands_rt60(30) /2;
+    array_30dB(9) = v_32bands_rt60(27) /2;
+    array_30dB(8) = v_32bands_rt60(24) /2;
+
 
 
     [t_upper, t_lower] = envelope(signal, round(fs/300), 'peak');
@@ -125,4 +132,27 @@ function [irValues, schroder_energy_db , t_w] = rt30_from_spectrum(signal, fs)
     'SCHROEDER', schroeder_energy ...
     );
 
+end
+
+function  [freqs, RT60] = schroeder_rt60(signal, fs)
+    octFilBank = octaveFilterBank('1 octave',fs, ...
+                                  'FrequencyRange',[18 22000]);                        
+    audio_out = octFilBank(signal);
+
+    freqs = getCenterFrequencies(octFilBank);
+    bands_ir = squeeze(audio_out(:,:,:));
+
+    [dummy_var , schroder_energy_db] = schroeder(abs(bands_ir));    
+    
+    relative_band_energy = ( schroder_energy_db - schroder_energy_db(1,:));
+    
+    for n = 1:length(relative_band_energy(1, :))
+        ir5dBSample = find(relative_band_energy(:,n) < -5, 1);
+        if isempty(ir5dBSample), ir5dBSample = Inf; end
+        
+        ir25dBSample = find(relative_band_energy(:,n) < -25, 1);
+        if isempty(ir25dBSample), ir25dBSample = Inf; end
+        
+        RT60(n) = (ir25dBSample - ir5dBSample) * 3 / fs;
+    end
 end
