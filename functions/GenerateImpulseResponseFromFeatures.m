@@ -8,6 +8,8 @@ function [irTimeDomain , difference_in_energy] = GenerateImpulseResponseFromFeat
     rt30 = MeasuresStruct.SPECTRUM_T30;
 
     t_target_t60 = rt30'*2;
+
+    t_initial_spectrum_values = MeasuresStruct.INITIAL_SPECTRUM;
     
         % Additional step
     %octFilBank = octaveFilterBank('1 octave',MeasuresStruct.SAMPLE_RATE, ...
@@ -16,7 +18,7 @@ function [irTimeDomain , difference_in_energy] = GenerateImpulseResponseFromFeat
     
     %t_bands_ir = squeeze(t_audio_out(:,:,:));
 
-    [t_freqs, t_initial_spectrum_values] = schroeder_energy(MeasuresStruct.SIGNAL, MeasuresStruct.SAMPLE_RATE);
+    %[t_freqs, t_initial_spectrum_values] = schroeder_energy(MeasuresStruct.SIGNAL, MeasuresStruct.SAMPLE_RATE);
 
     %t_initial_spectrum_values = 10 * log10 (bandpower(t_bands_ir, MeasuresStruct.SAMPLE_RATE, [0 MeasuresStruct.SAMPLE_RATE/2]));
 
@@ -42,17 +44,17 @@ function [irTimeDomain , difference_in_energy] = GenerateImpulseResponseFromFeat
     
     %g_post_spectrum_values = 10 * log10(bandpower(g_bands_ir, MeasuresStruct.SAMPLE_RATE, [0 MeasuresStruct.SAMPLE_RATE/2]));
     
-    [g_freqs, g_post_spectrum_values] = schroeder_energy(irTimeDomain, MeasuresStruct.SAMPLE_RATE);
+    %[g_freqs, g_post_spectrum_values] = schroeder_energy(irTimeDomain, MeasuresStruct.SAMPLE_RATE);
 
-    g_post_spectrum_values(isinf(g_post_spectrum_values)) = -150;
+    %g_post_spectrum_values(isinf(g_post_spectrum_values)) = -150;
     
-    difference_in_energy = t_initial_spectrum_values + ( t_initial_spectrum_values - g_post_spectrum_values); %% make this on 32 bands instead of 10
+    %difference_in_energy = t_initial_spectrum_values + ( t_initial_spectrum_values - g_post_spectrum_values); %% make this on 32 bands instead of 10
     
-    powerCorrectionSOS = designGEQ(difference_in_energy);
+    %powerCorrectionSOS = designGEQ(difference_in_energy);
     
-    outputFilters = zSOS(permute(powerCorrectionSOS,[3 4 1 2]) .* output_gain);
+    %outputFilters = zSOS(permute(powerCorrectionSOS,[3 4 1 2]) .* output_gain);
 
-    irTimeDomain = dss2impz(length(MeasuresStruct.SIGNAL), delays, feedback_matrix, input_gain', outputFilters, direct, 'absorptionFilters', zAbsorption);
+    %irTimeDomain = dss2impz(length(MeasuresStruct.SIGNAL), delays, feedback_matrix, input_gain', outputFilters, direct, 'absorptionFilters', zAbsorption);
     
     % Testing step
                   
@@ -64,13 +66,13 @@ function [irTimeDomain , difference_in_energy] = GenerateImpulseResponseFromFeat
     
     %g_debug_spectrum_values = 10 * log10(bandpower(debug_bands_ir, MeasuresStruct.SAMPLE_RATE, [0 MeasuresStruct.SAMPLE_RATE/2]));
     
-    [g_debug_freqs, g_debug_spectrum_values] = schroeder_energy(irTimeDomain, MeasuresStruct.SAMPLE_RATE);
+    %[g_debug_freqs, g_debug_spectrum_values] = schroeder_energy(irTimeDomain, MeasuresStruct.SAMPLE_RATE);
     
-    g_debug_spectrum_values(isinf(g_debug_spectrum_values)) = -150;
-    plot(t_initial_spectrum_values)
-    hold on
-    plot(g_post_spectrum_values)
-    plot(g_debug_spectrum_values)
+    %g_debug_spectrum_values(isinf(g_debug_spectrum_values)) = -150;
+    %plot(t_initial_spectrum_values)
+    %hold on
+    %plot(g_post_spectrum_values)
+    %plot(g_debug_spectrum_values)
     
     
 end

@@ -94,14 +94,10 @@ function [irValues, schroder_energy_db , t_w] = rt30_from_spectrum(signal, fs)
       array_c50(n) = 10 .* log10(earlyEnergy ./ lateEnergy);
     end
 
-    [v_32bands_freqs, v_32bands_rt60] = schroeder_rt60(signal, fs);
 
 
     t_w =getCenterFrequencies(octFilBank);
 
-    array_30dB(10) = v_32bands_rt60(30) /2;
-    array_30dB(9) = v_32bands_rt60(27) /2;
-    array_30dB(8) = v_32bands_rt60(24) /2;
 
 
 

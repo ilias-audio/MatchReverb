@@ -10,8 +10,8 @@ fprintf(">>>[INFO] Setup Paths...\n");
     targetMeasures = targetMeasures(~[targetMeasures.isdir]);
 
     fprintf(">>>[INFO] %d Measures found...\n", length(targetMeasures));
-    population_size = 1;
-    numOfGen = 3;
+    population_size = 25;
+    numOfGen = 1;
     
     mkdir(fullfile(result_dir));
     mkdir(fullfile(result_dir, "audio"));
@@ -32,10 +32,11 @@ for i= 1:length(targetMeasures)
     
     load(fullfile(targetMeasures(i).folder, targetMeasures(i).name));
 
+    tar_measures = measures;
 
 
     %% Genetic Algorithm
-    MIN_DELAY_IN_S = 0.00025;
+    genMIN_DELAY_IN_S = 0.00025;
     MAX_DELAY_IN_S = 0.125;
 
     boundary_input_gain  = [ones(1,16)*-1; ones(1,16)*1];
@@ -46,9 +47,8 @@ for i= 1:length(targetMeasures)
     boundary_tone_filters = [ones(1,10)*-25; ones(1,10)*25]; %% 50 : 5000 // 10
 
     
-    lb = [boundary_direct_gain(1,:), boundary_rt60s(1,:), boundary_tone_filters(1,:)];
-    ub = [boundary_direct_gain(2,:), boundary_rt60s(2,:), boundary_tone_filters(2,:)];
-
+    lb = [boundary_input_gain(1,:), boundary_output_gain(1,:), boundary_delays(1,:) ,boundary_direct_gain(1,:)];
+    ub = [boundary_input_gain(2,:), boundary_output_gain(2,:), boundary_delays(2,:), boundary_direct_gain(2,:)];
 
     numberOfVariables = length(ub);
 
@@ -60,54 +60,43 @@ for i= 1:length(targetMeasures)
     InitialPopulationrt60s = (0.5 + rand(population_size, length(boundary_rt60s(1,:)))) .* (measures.SPECTRUM_T30 * 2);
     InitialPopulationToneFilters = (0.5 + rand(population_size, length(boundary_tone_filters(1,:)))) .* measures.INITIAL_SPECTRUM;
 
-    InitialPopulationMatrix = [InitialPopulationDirectGain InitialPopulationrt60s InitialPopulationToneFilters];
+    InitialPopulationMatrix = [InitialPopulationInputGain InitialPopulationOutputGain InitialPopulationDelays InitialPopulationDirectGain];
 
 
+    options = optimoptions("ga",'PlotFcn',{@gaplotbestf},  ...
+    'Display','iter', 'MaxStallGenerations',1,'MaxGenerations',numOfGen, ...
+    "PopulationSize",population_size, 'UseParallel', false, "InitialPopulationMatrix",InitialPopulationMatrix);
 
+    measures.INITIAL_SPECTRUM = gen_measures.TONE_GAINS_NEW;
+    measures.SPECTRUM_T30 = gen_measures.ABSORPTION_FILTERS_NEW / 2;
 
-    parameters = lsm_gains(measures.SIGNAL,[gen_measures.INPUT_GAIN, gen_measures.OUTPUT_GAIN, gen_measures.DELAYS InitialPopulationDirectGain InitialPopulationrt60s InitialPopulationToneFilters], measures.SAMPLE_RATE);
+    FitnessFunction = @(x)reverb_fitness_full_order_16(measures, x(1:end-1));
 
+    [x,fval] = ga(FitnessFunction,numberOfVariables,[],[],[],[],lb,ub, [], options);
 
-    %algorithm = @fmincon; % Use the fmincon algorithm
-    %options = optimoptions('gamultiobj', 'PlotFcn',@gaplotpareto, "InitialPopulationMatrix", InitialPopulationMatrix);
-    %x0 = InitialPopulationMatrix;
-    %objective = @(x) objective_loss(measures.SIGNAL,[gen_measures.INPUT_GAIN, gen_measures.OUTPUT_GAIN, gen_measures.DELAYS x], measures.SAMPLE_RATE);
-
-
-
-
-    % Set the number of iterations
-    %num_iterations = 1; % Replace with your desired number of iterations
     
-    %x(gain(1)) + x(rt60(1)) <= loss(band(1));
-    % I need 10 optimisation layers that will change the gain and rt60 
-    % based on the difference in those bands, to minimize it.
-    % How can I get 10 band optimisation?
-    
-    % Loop over the specified number of iterations
-    %for i = 1:num_iterations
-        % Optimize the parameters
-     %   params = gamultiobj(objective, numberOfVariables, [] , [], [], [], lb, ub, [], options);
-        
-        % Evaluate the objective function for the updated candidate signal
-      %  objective_value = objective(params);
-        
-        % Display the current objective value
-       % fprintf('Iteration %d: objective value = %f\n', i, objective_value);
-   % end
 
-    name_header = 'all_';
+    [g_input_gain, g_output_gain, g_delays, g_direct_gain] = splitXInParameters(x);
+
+    g_direct_gain = 1;
+
+    parameters = lsm_gains(measures.SIGNAL,[g_input_gain, g_output_gain, g_delays, g_direct_gain, gen_measures.ABSORPTION_FILTERS_NEW, gen_measures.TONE_GAINS_NEW], measures.SAMPLE_RATE);
+
+
+   [g_input_gain, g_output_gain, g_delays, g_direct_gain, g_rt60s, g_tone_filter_gains] = splitAllParameters(parameters);
+   [g_ir_time_domain] = GenerateImpulseResponseFromParameters(length(measures.SIGNAL), g_delays, g_input_gain, g_output_gain,  g_direct_gain, g_rt60s, g_tone_filter_gains , measures.SAMPLE_RATE , 16); 
+   name_header = 'all_';
 
 
     measures = MeasureImpulseResponseFeatures(g_ir_time_domain, measures.SAMPLE_RATE, [name_header targetMeasures(i).name(1:end-13)]);
 
-    measures.COST = fval;
+    %measures.COST = fval;
     measures.INPUT_GAIN = g_input_gain;
     measures.OUTPUT_GAIN = g_output_gain;
     measures.DELAYS = g_delays;
     measures.DIRECT = g_direct_gain;  
-    measures.TONE_GAINS = g_tone_filter_gains;
-    measures.ABSORPTION_FILTERS = g_rt60s;
+    measures.TONE_GAINS_NEW = g_tone_filter_gains;
+    measures.ABSORPTION_FILTERS_NEW = g_rt60s;
    
     save(fullfile(result_dir, "measures", [name_header targetMeasures(i).name(1:end-13) '_measures.mat']), 'measures');
 

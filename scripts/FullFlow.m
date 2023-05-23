@@ -1,6 +1,6 @@
 %% First Steps
 % run the python script 
-% add functions and libs to path
+% add functions scripts libs to path
 
 %% Setup Steps
 target_IR_folder = fullfile(pwd, "IR_mono");

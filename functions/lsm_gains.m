@@ -18,6 +18,7 @@ octFilBank = octaveFilterBank('1 octave',fs, ...
     freqs = getCenterFrequencies(octFilBank);
     tar_bands_ir = squeeze(tar_audio_out(:,:,:));
 
+    lowest_error = 1e5;
 
 
 for i= 1:iter
@@ -51,22 +52,26 @@ for i= 1:iter
     error_per_band_gain = sum(error_per_band_gain,3);
     error_per_band_time = sum(error_per_band_time,3);
 
-    g_tone_filter_gains = g_tone_filter_gains + (learn_rate_gain  * (error_per_band_gain(4:13)'));
-    g_rt60s = g_rt60s + (learn_rate_time  * (error_per_band_time(4:13)'));
-
     %error_per_band= sum(tar_spectrum_dB) - sum(gen_spectrum_dB); % size 10
     fprintf('local cost: objective value = %f\n', sum(abs(error_per_band_time),'all'));
-    if sum(abs(error_per_band_time),'all') <= 10
-        fprintf("DONE!");
+    if sum(abs(error_per_band_time),'all') <= lowest_error
+        best_tone_filter_gains = g_tone_filter_gains;
+        best_rt60s = g_rt60s;
+        lowest_error = sum(abs(error_per_band_time));
+        fprintf('g_tone_filter_gains %f\n', best_tone_filter_gains);
+        fprintf('g_rt60s %f\n', best_rt60s);
     end
-b end
+
+    g_tone_filter_gains = g_tone_filter_gains + (learn_rate_gain  * (error_per_band_gain(4:13)'));
+    g_rt60s = g_rt60s + (learn_rate_time  * (error_per_band_time(4:13)'));
+end
 
 
 
 
-fprintf('g_tone_filter_gains %f\n', g_tone_filter_gains);
-fprintf('g_rt60s %f\n', g_rt60s);
+fprintf('g_tone_filter_gains %f\n', best_tone_filter_gains);
+fprintf('g_rt60s %f\n', best_rt60s);
 
-parameters = [g_input_gain, g_output_gain, g_delays, g_direct_gain, g_rt60s, g_tone_filter_gains] ;
+parameters = [g_input_gain, g_output_gain, g_delays, g_direct_gain, best_rt60s, best_tone_filter_gains] ;
 
 end

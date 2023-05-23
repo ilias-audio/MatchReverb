@@ -26,7 +26,7 @@ function cost = reverb_fitness_full_order_16(TargetIRMeasures, x)
     
    %cost = mean(abs(t_RT60 - g_RT60)) + 0.1 * mean(abs(t_initPower - g_initPower));
    
-   cost = sum(mean(stftloss(TargetIRMeasures.SIGNAL, g_ir_time_domain, g_fs),2));
+   cost = sum(sum(melSpectrogramError(TargetIRMeasures.SIGNAL, g_ir_time_domain, g_fs),2));
 
    fprintf("[LOG] Local Cost: %f \n", cost);
 
